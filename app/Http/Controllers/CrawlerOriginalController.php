@@ -17,7 +17,7 @@ use Goutte;
 use phpDocumentor\Reflection\Types\Null_;
 use WebScraper\ApiClient\Client;
 
-class CrawlerController extends Controller
+class CrawlerOriginalController extends Controller
 {
     protected $counterS = [];
     private $ch;
@@ -398,14 +398,14 @@ class CrawlerController extends Controller
             $server_url = Config::get('app.url');
             var_dump($user["email"]);
             $time = date("d-m-y H:i:s", time());
-            if ($update){
-                Mail::send('notification-email', ["data" => sizeof($products["products"]), "url" => $server_url, "shopName"=> $shopName, "update" => $update, "update_size" => sizeof($updated["products"]), "time" => $time], function ($message) use ($user) {
+            if ($update) {
+                Mail::send('notification-email', ["data" => sizeof($products["products"]), "url" => $server_url, "shopName" => $shopName, "update" => $update, "update_size" => sizeof($updated["products"]), "time" => $time], function ($message) use ($user) {
                     $message->to($user["email"]);
                     $message->subject('Priseshape Notifier');
                 });
                 var_dump("Email with UP send");
-            }else{
-                Mail::send('notification-email', ["data" => sizeof($products["products"]), "shopName"=> $shopName, "url" => $server_url, "update" => $update, "update_size" => sizeof($updated["products"]), "time" => $time], function ($message) use ($user) {
+            } else {
+                Mail::send('notification-email', ["data" => sizeof($products["products"]), "shopName" => $shopName, "url" => $server_url, "update" => $update, "update_size" => sizeof($updated["products"]), "time" => $time], function ($message) use ($user) {
                     $message->to($user["email"]);
                     $message->subject('Priseshape Notifier');
                 });
@@ -467,7 +467,7 @@ class CrawlerController extends Controller
                 $offset = $data["data"]["index"];
             }
             if (isset($data["data"]["search"])) {
-                $products = UserCrawlerResult::where(function ($query) use ($data){
+                $products = UserCrawlerResult::where(function ($query) use ($data) {
                     $query->orWhere("sku", "like", "%" . $data["data"]["search"] . "%")
                         ->orWhere("mpn", "like", "%" . $data["data"]["search"] . "%")
                         ->orWhere("name", "like", "%" . $data["data"]["search"] . "%")
@@ -848,39 +848,39 @@ class CrawlerController extends Controller
         $gzip = false;
         $query = [];
         $parts = parse_url($url);
-        if (isset($parts['query'])){
+        if (isset($parts['query'])) {
             parse_str($parts['query'], $query);
-        }else{
+        } else {
             $query["sitemap_id"] = $url;
             $query["api_token"] = "xboyZQd0CXMsvBJ6BOoRy3iSZH0ZbgkaPUM6Aeui0vhwgWYMV5C1aO9iB9xK";
         }
 
-        if (isset($config["newVal"])){
+        if (isset($config["newVal"])) {
             if (isset($config["newVal"]["datafeedSku"])) $skuName = $config["newVal"]["datafeedSku"];
             if (isset($config["newVal"]["datafeedGid"])) $gidName = $config["newVal"]["datafeedGid"];
             if (isset($config["newVal"]["datafeedMpn"])) $mpnName = $config["newVal"]["datafeedMpn"];
         }
-        if (!is_array($config)){
+        if (!is_array($config)) {
             $config = json_decode($config);
             if (isset($config->sku)) $skuName = $config->sku;
             if (isset($config->ean)) $gidName = $config->ean;
             if (isset($config->mpn)) $mpnName = $config->mpn;
         }
 
-        if (!$uid){
+        if (!$uid) {
             $uid = $this->guard()->user()->id;
         }
-        if (isset($query["sitemap_id"]) && isset($query["api_token"])){
+        if (isset($query["sitemap_id"]) && isset($query["api_token"])) {
             $wioc = new Client(['token' => $query["api_token"]]);
             $jobs = $wioc->getScrapingJobs($query["sitemap_id"]);
             $tmpjobs = [];
-            foreach ($jobs as $sjob){
+            foreach ($jobs as $sjob) {
                 $tmpjobs[] = $sjob;
             }
-            if (sizeof($tmpjobs) > 0 ){
-                $lastJob = $tmpjobs[sizeof($tmpjobs)-1];
-                if ($tmpjobs[sizeof($tmpjobs)-1]["stored_record_count"] == 0 && isset($tmpjobs[sizeof($tmpjobs)-2])){
-                    $lastJob = $tmpjobs[sizeof($tmpjobs)-2];
+            if (sizeof($tmpjobs) > 0) {
+                $lastJob = $tmpjobs[sizeof($tmpjobs) - 1];
+                if ($tmpjobs[sizeof($tmpjobs) - 1]["stored_record_count"] == 0 && isset($tmpjobs[sizeof($tmpjobs) - 2])) {
+                    $lastJob = $tmpjobs[sizeof($tmpjobs) - 2];
                 }
                 $webShop = UserWebshops::find($shopId);
 
@@ -892,15 +892,15 @@ class CrawlerController extends Controller
                 $wioc->downloadScrapingJobCSV($lastJob["id"], $outputFile);
 //                }
 
-            }else{
+            } else {
                 return true;
             }
 
-        }else{
+        } else {
             return false;
         }
         $csvData = $this->csv_to_array($outputFile);
-        if ($outputFile != ""){
+        if ($outputFile != "") {
             unlink($outputFile);
         }
 //        if ($url != ""){
@@ -924,25 +924,25 @@ class CrawlerController extends Controller
             $oldCount = UserCrawlerResult::where("shop_id", "=", $shopId)->count();
             $ss = [];
             foreach ($csvData as $product) {
-                $img = $pl = $cat = $name ="";
+                $img = $pl = $cat = $name = "";
                 $sku = $ean = $mpn = "null";
                 if (isset($product["product-image"])) {
                     if (strstr(trim($product["product-image"]), "//")) {
                         $img = str_replace("//", "http://", trim($product["product-image"]));
                     } else {
                         if (trim($product["product-image"]) != "null") {
-                            $tmps = explode("/",trim($product["product-image"]));
+                            $tmps = explode("/", trim($product["product-image"]));
                             $mainS = true;
-                            foreach ($tmps as $ikey=>$ival){
-                                if (!empty($ival) && $ikey > 1 && $ikey < 3){
-                                    if (strstr($shop_url, $ival)){
+                            foreach ($tmps as $ikey => $ival) {
+                                if (!empty($ival) && $ikey > 1 && $ikey < 3) {
+                                    if (strstr($shop_url, $ival)) {
                                         $mainS = false;
                                     }
                                 }
                             }
-                            if ($mainS){
+                            if ($mainS) {
                                 $img = $shop_url . ltrim($product["product-image"], "/");
-                            }else{
+                            } else {
                                 $img = trim($product["product-image"]);
                             }
                         }
@@ -953,47 +953,47 @@ class CrawlerController extends Controller
                         $img = str_replace("//", "http://", trim($product["product-image-src"]));
                     } else {
                         if (trim($product["product-image-src"]) != "null") {
-                            $tmps = explode("/",trim($product["product-image-src"]));
+                            $tmps = explode("/", trim($product["product-image-src"]));
                             $mainS = true;
-                            foreach ($tmps as $ikey=>$ival){
-                                if (!empty($ival) && $ikey >= 0 && $ikey <= 3){
-                                    if (strstr($shop_url, $ival)){
+                            foreach ($tmps as $ikey => $ival) {
+                                if (!empty($ival) && $ikey >= 0 && $ikey <= 3) {
+                                    if (strstr($shop_url, $ival)) {
                                         $mainS = false;
                                     }
-                                    if (strstr("http:", $ival) || strstr("https:", $ival) ){
+                                    if (strstr("http:", $ival) || strstr("https:", $ival)) {
                                         $mainS = false;
                                     }
                                 }
                             }
-                            if ($mainS){
+                            if ($mainS) {
                                 $img = $shop_url . ltrim($product["product-image-src"], "/");
-                            }else{
+                            } else {
                                 $img = trim($product["product-image-src"]);
                             }
                         }
                     }
                 }
-                if (strstr($img, "http:http://")){
+                if (strstr($img, "http:http://")) {
                     $img = str_replace("http:http://", "http://", $img);
                 }
 
-                if (strstr($img, "https:https://")){
+                if (strstr($img, "https:https://")) {
                     $img = str_replace("https:https://", "https://", $img);
                 }
 
-                if (strstr($img, "https:http://")){
+                if (strstr($img, "https:http://")) {
                     $img = str_replace("https:http://", "https://", $img);
                 }
 
-                if (strstr($img, "http:https://")){
+                if (strstr($img, "http:https://")) {
                     $img = str_replace("http:https://", "https://", $img);
                 }
-                if ($img != "" && strstr($shop_url, $img)){
-                    $img = $shop_url.ltrim($img, "/");
+                if ($img != "" && strstr($shop_url, $img)) {
+                    $img = $shop_url . ltrim($img, "/");
                 }
 
-                if ($img != "" && $img[0] == "/"){
-                    $img = $shop_url.ltrim($img, "/");
+                if ($img != "" && $img[0] == "/") {
+                    $img = $shop_url . ltrim($img, "/");
                 }
 
                 if (isset($product["product-id"]) && $product["product-id"] != "") $sku = trim($product["product-id"]);
@@ -1004,7 +1004,7 @@ class CrawlerController extends Controller
                 if (isset($product["product-url-href"])) $pl = trim($product["product-url-href"]);
                 if (isset($product["product-link-href"])) $pl = trim($product["product-link-href"]);
 
-                if (!strstr($pl, "http://") && !strstr($pl, "https://")){
+                if (!strstr($pl, "http://") && !strstr($pl, "https://")) {
                     $pl = $shop_url . ltrim($pl, "/");
                 }
 
@@ -1017,7 +1017,7 @@ class CrawlerController extends Controller
                 if (isset($product["product-gtin"]) && $product["product-gtin"] != "") $ean = trim($product["product-gtin"]);
                 if (isset($product["product-mpn"]) && $product["product-mpn"] != "") $mpn = trim($product["product-mpn"]);
 
-                if (isset($product["product-sku"]) && $product["product-sku"] != "" && isset($product["product-number"]) && $product["product-number"] != ""){
+                if (isset($product["product-sku"]) && $product["product-sku"] != "" && isset($product["product-number"]) && $product["product-number"] != "") {
                     $sku = trim($product["product-sku"]);
                     $mpn = trim($product["product-number"]);
                 }
@@ -1026,78 +1026,72 @@ class CrawlerController extends Controller
                 $tmpMpn = $mpn;
                 $tmpEan = $ean;
 
-                if ($skuName != null && $skuName != "sku"){
-                    if ($skuName == "gid")
-                    {
-                        if (isset($product["product-gtin"]) && $product["product-gtin"] != ""){
+                if ($skuName != null && $skuName != "sku") {
+                    if ($skuName == "gid") {
+                        if (isset($product["product-gtin"]) && $product["product-gtin"] != "") {
                             $sku = $product["product-gtin"];
-                        }else{
+                        } else {
                             $sku = "null";
                         }
 
                     }
-                    if ($skuName == "mpn")
-                    {
-                        if (isset($product["product-mpn"]) && $product["product-mpn"] != ""){
+                    if ($skuName == "mpn") {
+                        if (isset($product["product-mpn"]) && $product["product-mpn"] != "") {
                             $sku = $product["product-mpn"];
-                        }else{
+                        } else {
                             $sku = "null";
                         }
                     }
                 }
-                if ($gidName != null && $gidName != "gid"){
-                    if ($gidName == "sku")
-                    {
-                        if ($tmpSku != "null"){
+                if ($gidName != null && $gidName != "gid") {
+                    if ($gidName == "sku") {
+                        if ($tmpSku != "null") {
                             $ean = $tmpSku;
-                        }else{
+                        } else {
                             $ean = "null";
                         }
 
                     }
-                    if ($gidName == "mpn")
-                    {
-                        if (isset($product["product-mpn"]) && $product["product-mpn"] != ""){
+                    if ($gidName == "mpn") {
+                        if (isset($product["product-mpn"]) && $product["product-mpn"] != "") {
                             $ean = $product["product-mpn"];
-                        }else{
+                        } else {
                             $ean = "null";
                         }
 
                     }
                 }
 
-                if ($mpnName != null && $mpnName != "mpn"){
-                    if ($mpnName == "sku")
-                    {
-                        if ($tmpSku != "null"){
+                if ($mpnName != null && $mpnName != "mpn") {
+                    if ($mpnName == "sku") {
+                        if ($tmpSku != "null") {
                             $mpn = $tmpSku;
-                        }else{
+                        } else {
                             $mpn = "null";
                         }
 
                     }
-                    if ($mpnName == "gid")
-                    {
-                        if (isset($product["product-gtin"]) && $product["product-gtin"] != ""){
+                    if ($mpnName == "gid") {
+                        if (isset($product["product-gtin"]) && $product["product-gtin"] != "") {
                             $mpn = $product["product-gtin"];
-                        }else{
+                        } else {
                             $mpn = "null";
                         }
                     }
                 }
-                if (isset($product["product-price"])){
-                    $product["product-price"] = str_replace(",-","",$product["product-price"]);
-                    $product["product-price"] = str_replace("DKK","",$product["product-price"]);
+                if (isset($product["product-price"])) {
+                    $product["product-price"] = str_replace(",-", "", $product["product-price"]);
+                    $product["product-price"] = str_replace("DKK", "", $product["product-price"]);
                 }
-                if (isset($product["product-title"])){
+                if (isset($product["product-title"])) {
                     $name = $product["product-title"];
                 }
 
-                if (isset($product["product-tite"])){
+                if (isset($product["product-tite"])) {
                     $name = $product["product-tite"];
                 }
 
-                if (isset($product["product-name"])){
+                if (isset($product["product-name"])) {
                     $name = $product["product-name"];
                 }
 
@@ -1105,7 +1099,7 @@ class CrawlerController extends Controller
                     "user_id" => $uid,
                     "shop_id" => $shopId,
                     "name" => $name,
-                    "price" => isset($product["product-price"])?trim($product["product-price"]):"",
+                    "price" => isset($product["product-price"]) ? trim($product["product-price"]) : "",
 
                     "sku" => $sku,
                     "ean" => $ean,
@@ -1115,7 +1109,7 @@ class CrawlerController extends Controller
                     "ean_old" => $ean,
                     "mpn_old" => $mpn,
 
-                    "brand" => isset($product["product-brand"])?trim($product["product-brand"]):"",
+                    "brand" => isset($product["product-brand"]) ? trim($product["product-brand"]) : "",
                     "category" => $cat,
                     "isbn" => "",
                     "asin" => "",
@@ -1125,44 +1119,44 @@ class CrawlerController extends Controller
                     "sync" => true,
                     "old_price" => "",
                     "image" => $img,
-                    "description" => isset($product["product-description"])?trim($product["product-description"]):"",
+                    "description" => isset($product["product-description"]) ? trim($product["product-description"]) : "",
                     "product_link" => trim($pl),
-                    "hash" => md5(trim($name).$tmpSku.$tmpEan.$tmpMpn)
+                    "hash" => md5(trim($name) . $tmpSku . $tmpEan . $tmpMpn)
                 ];
                 $model = new UserCrawlerResult();
                 $ss["products"][] = $model->updateOrCreate(
                     [
                         "shop_id" => $shopId,
-                        "hash" => md5(trim($name).$tmpSku.$tmpEan.$tmpMpn)
-                    ],$productArr);
+                        "hash" => md5(trim($name) . $tmpSku . $tmpEan . $tmpMpn)
+                    ], $productArr);
             }
-            if (!$noRel){
+            if (!$noRel) {
                 $this->setProductRelations($uid, null, $shopId);
-            }else{
+            } else {
                 $updated["products"] = [];
-                foreach ($ss["products"] as $product){
+                foreach ($ss["products"] as $product) {
                     $changed = $product->getChanges();
-                    if (isset($changed["price"])){
+                    if (isset($changed["price"])) {
                         $updated["products"][] = $product;
                     }
                 }
                 $ss["uid"] = $uid;
                 $sshop = UserWebshops::where("id", "=", $shopId)->first();
                 $newCount = UserCrawlerResult::where("shop_id", "=", $shopId)->count();
-                if ((sizeof($updated["products"]) > 0 && $oldCount>0) || ($newCount!=$oldCount && $oldCount>0)){
-                    if ($newCount != $oldCount){
-                        for($i = 1;$i<=($newCount-$oldCount);$i++){
+                if ((sizeof($updated["products"]) > 0 && $oldCount > 0) || ($newCount != $oldCount && $oldCount > 0)) {
+                    if ($newCount != $oldCount) {
+                        for ($i = 1; $i <= ($newCount - $oldCount); $i++) {
                             $updated["products"][] = ['test'];
                         }
                     }
                     $this->sendNotify($ss, $updated, true, $sshop);
-                }elseif ($oldCount == 0){
+                } elseif ($oldCount == 0) {
                     $this->sendNotify($ss, $updated, false, $sshop);
                 }
 
             }
             return true;
-        }else{
+        } else {
             return true;
         }
     }
@@ -1185,7 +1179,7 @@ class CrawlerController extends Controller
                     }
 
                 } else {
-                    if (sizeof($header) == sizeof($row)){
+                    if (sizeof($header) == sizeof($row)) {
                         $data[] = array_combine($header, $row);
                     }
                 }
@@ -1265,35 +1259,36 @@ class CrawlerController extends Controller
     }
 
 
-    public function setProductRelations($user_id = null, $crawlerProductId = null, $webshopId = null){
-        if ($user_id != null){
-            if ($crawlerProductId != null){
+    public function setProductRelations($user_id = null, $crawlerProductId = null, $webshopId = null)
+    {
+        if ($user_id != null) {
+            if ($crawlerProductId != null) {
                 $crawlerProduct = UserCrawlerResult::find($crawlerProductId);
-            }else{
+            } else {
                 $crawlerProduct = UserCrawlerResult::all();
             }
-            if ($webshopId!= null){
-                $crawlerProduct = UserCrawlerResult::where("shop_id",$webshopId)->get()->all();
+            if ($webshopId != null) {
+                $crawlerProduct = UserCrawlerResult::where("shop_id", $webshopId)->get()->all();
             }
-            if ($crawlerProductId == null){
-                foreach ($crawlerProduct as $cp){
+            if ($crawlerProductId == null) {
+                foreach ($crawlerProduct as $cp) {
                     $productModel = UserProducts::where(function ($query) use ($cp) {
                         $query->orWhere('sku', "=", $cp->sku)
                             ->orWhere('gid', "=", $cp->gid)
                             ->orWhere('mpn', "=", $cp->mpn);
                     })->where("user_id", $user_id)->get()->all();
 //                    $clear = UserProductRelations::where("user_crowler_product_id", $cp->id)->forceDelete();
-                    foreach ($productModel as $product){
+                    foreach ($productModel as $product) {
                         $relationModel = new UserProductRelations();
                         $relationModel->updateOrCreate(
                             [
                                 "user_crowler_product_id" => $cp->id,
-                                "shop_id" =>$cp->shop_id,
+                                "shop_id" => $cp->shop_id,
                                 "user_product_id" => $product->id
                             ],
                             [
                                 "user_crowler_product_id" => $cp->id,
-                                "shop_id" =>$cp->shop_id,
+                                "shop_id" => $cp->shop_id,
                                 "user_product_id" => $product->id
                             ]);
 //                        $relationModel->user_crowler_product_id = $cp->id;
@@ -1302,24 +1297,24 @@ class CrawlerController extends Controller
 //                        $relationModel->save();
                     }
                 }
-            }else{
+            } else {
                 $productModel = UserProducts::where(function ($query) use ($crawlerProduct) {
                     $query->orWhere('sku', "=", $crawlerProduct->sku)
                         ->orWhere('gid', "=", $crawlerProduct->gid)
                         ->orWhere('mpn', "=", $crawlerProduct->mpn);
                 })->where("user_id", $user_id)->get();
 //                $clear = UserProductRelations::where("user_crowler_product_id", $crawlerProduct->id)->forceDelete();
-                foreach ($productModel as $product){
+                foreach ($productModel as $product) {
                     $relationModel = new UserProductRelations();
                     $relationModel->updateOrCreate(
                         [
                             "user_crowler_product_id" => $crawlerProduct->id,
-                            "shop_id" =>$crawlerProduct->shop_id,
+                            "shop_id" => $crawlerProduct->shop_id,
                             "user_product_id" => $product->id
                         ],
                         [
                             "user_crowler_product_id" => $crawlerProduct->id,
-                            "shop_id" =>$crawlerProduct->shop_id,
+                            "shop_id" => $crawlerProduct->shop_id,
                             "user_product_id" => $product->id
                         ]);
 //                    $relationModel = new UserProductRelations();
@@ -1337,23 +1332,24 @@ class CrawlerController extends Controller
         return Auth::guard();
     }
 
-    public function crawlerNotifyHandler(Request $request){
-        if (isset($_GET['user_id']) && isset($_POST['sitemap_id'])){
+    public function crawlerNotifyHandler(Request $request)
+    {
+        if (isset($_GET['user_id']) && isset($_POST['sitemap_id'])) {
             $uid = \Illuminate\Support\Facades\Crypt::decrypt($_GET['user_id']);
-            $sitemapId = (int) $_POST['sitemap_id'];
-            if (isset($_POST['status']) && $_POST['status'] == "finished"){
-                $urls = UserWebshopsUrls::where("user_id",$uid)->get();
-                if (sizeof($urls)>0){
-                    foreach ($urls as $url){
+            $sitemapId = (int)$_POST['sitemap_id'];
+            if (isset($_POST['status']) && $_POST['status'] == "finished") {
+                $urls = UserWebshopsUrls::where("user_id", $uid)->get();
+                if (sizeof($urls) > 0) {
+                    foreach ($urls as $url) {
                         $query = [];
                         $parts = parse_url($url->url);
-                        if (isset($parts['query'])){
+                        if (isset($parts['query'])) {
                             parse_str($parts['query'], $query);
-                        }else{
+                        } else {
                             $query["sitemap_id"] = $url;
                             $query["api_token"] = "xboyZQd0CXMsvBJ6BOoRy3iSZH0ZbgkaPUM6Aeui0vhwgWYMV5C1aO9iB9xK";
                         }
-                        if (isset($query["sitemap_id"])){
+                        if (isset($query["sitemap_id"])) {
                             $shop = UserWebshops::find($url->shop_id);
                             $this->importFromCSV($uid, $url->shop_id, $url->url, $shop->url, $shop->config, true);
                         }

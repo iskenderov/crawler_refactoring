@@ -14,7 +14,7 @@ use App\Services\ProductsService;
 use Illuminate\Http\Request;
 
 
-class CrawlerController2 extends Controller
+class CrawlerController extends Controller
 {
     /**
      * @var CrawlerService
